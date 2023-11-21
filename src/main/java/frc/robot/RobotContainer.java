@@ -13,6 +13,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
@@ -37,7 +39,8 @@ public class RobotContainer {
 
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
-
+  
+  public static NetworkTable limelight;
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
@@ -56,6 +59,7 @@ public class RobotContainer {
                 -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
                 true, true),
             m_robotDrive));
+    limelight = NetworkTableInstance.getDefault().getTable("limelight-twoplus");
   }
 
   /**
@@ -74,6 +78,9 @@ public class RobotContainer {
             m_robotDrive));
   }
 
+  public double getAprilID() {
+    return limelight.getEntry("tid").getDouble(0);
+  }
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
