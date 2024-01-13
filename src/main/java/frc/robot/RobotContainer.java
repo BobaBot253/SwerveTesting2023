@@ -36,9 +36,22 @@ import java.util.List;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
-
-  // The driver's controller
-  XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
+  private static final XboxController 
+    driverController = new XboxController(OIConstants.kDriverControllerPort),
+    operatorController = new XboxController(OIConstants.kDriverControllerPort);
+  private static final JoystickButton 
+    driver_A = new JoystickButton(driverController, 1),
+    driver_B = new JoystickButton(driverController, 2), driver_X = new JoystickButton(driverController, 3),
+    driver_Y = new JoystickButton(driverController, 4), driver_LB = new JoystickButton(driverController, 5),
+    driver_RB = new JoystickButton(driverController, 6), driver_VIEW = new JoystickButton(driverController, 7),
+    driver_MENU = new JoystickButton(driverController, 8);
+  
+  private static final JoystickButton 
+    operator_A = new JoystickButton(operatorController, 1),
+    operator_B = new JoystickButton(operatorController, 2), operator_X = new JoystickButton(operatorController, 3),
+    operator_Y = new JoystickButton(operatorController, 4), operator_LB = new JoystickButton(operatorController, 5),
+    operator_RB = new JoystickButton(operatorController, 6), operator_VIEW = new JoystickButton(operatorController, 7),
+    operator_MENU = new JoystickButton(operatorController, 8);
   
   public static NetworkTable limelight;
   /**
@@ -54,15 +67,15 @@ public class RobotContainer {
         // Turning is controlled by the X axis of the right stick.
         new RunCommand(
             () -> m_robotDrive.drive(
-                -MathUtil.applyDeadband(m_driverController.getLeftY(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getLeftX(), OIConstants.kDriveDeadband),
-                -MathUtil.applyDeadband(m_driverController.getRightX(), OIConstants.kDriveDeadband),
+                -MathUtil.applyDeadband(driverController.getLeftY(), OIConstants.kDriveDeadband),
+                -MathUtil.applyDeadband(driverController.getLeftX(), OIConstants.kDriveDeadband),
+                -MathUtil.applyDeadband(driverController.getRightX(), OIConstants.kDriveDeadband),
                 true, true),
             m_robotDrive));
     limelight = NetworkTableInstance.getDefault().getTable("limelight-twoplus");
   }
 
-  /**
+  /**x``
    * Use this method to define your button->command mappings. Buttons can be
    * created by
    * instantiating a {@link edu.wpi.first.wpilibj.GenericHID} or one of its
@@ -72,7 +85,7 @@ public class RobotContainer {
    * {@link JoystickButton}.
    */
   private void configureButtonBindings() {
-    new JoystickButton(m_driverController, Button.kR1.value)
+    driver_X
         .whileTrue(new RunCommand(
             () -> m_robotDrive.setX(),
             m_robotDrive));
@@ -81,6 +94,15 @@ public class RobotContainer {
   public double getAprilID() {
     return limelight.getEntry("tid").getDouble(0);
   }
+
+  // public static double getXOffset() {
+  //   return -limelight.getEntry("tx").getDouble(0);
+  // }
+
+  // public static double getYOffset() {
+  //   return -limelight.getEntry("ty").getDouble(0);
+  // }
+  
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
