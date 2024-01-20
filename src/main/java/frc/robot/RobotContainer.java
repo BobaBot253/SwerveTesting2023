@@ -25,9 +25,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+
+import java.nio.file.Path;
 import java.util.List;
 
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.PathPlannerTrajectory;
 
 /*
@@ -127,7 +131,8 @@ public class RobotContainer {
    */
   
   public Command getAutonomousCommand() {
-    return new PathPlannerAuto("New Auto");
+    PathPlannerPath autopath = PathPlannerPath.fromPathFile("T Dance");
+    return AutoBuilder.followPath(autopath);
   }
 
   // public Command getAutonomousCommand() {
