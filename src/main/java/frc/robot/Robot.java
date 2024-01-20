@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -47,6 +48,10 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    SmartDashboard.putNumber("April Tag ID", m_robotContainer.getAprilID());
+    // SmartDashboard.putNumber("April Tag ID", 1);
+    SmartDashboard.putNumber("April Tag Tx", m_robotContainer.getAprilTheta());
+    // SmartDashboard.putNumber("April Tag Valid?", m_robotContainer.getAprilTag());
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -59,15 +64,17 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-
+    // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
     /*
      * String autoSelected = SmartDashboard.getString("Auto Selector",
      * "Default"); switch(autoSelected) { case "My Auto": autonomousCommand
      * = new MyAutoCommand(); break; case "Default Auto": default:
      * autonomousCommand = new ExampleCommand(); break; }
      */
-
+    // test auto 1/18/24
+    CommandScheduler.getInstance().schedule(
+      new SequentialCommandGroup()
+        );
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
@@ -92,7 +99,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    SmartDashboard.putNumber("April Tag ID", m_robotContainer.getAprilID());
+
   }
 
   @Override

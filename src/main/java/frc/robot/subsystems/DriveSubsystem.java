@@ -5,22 +5,26 @@
 package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import com.pathplanner.lib.auto.*;
+import com.pathplanner.lib.util.*;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.WPIUtilJNI;
-import edu.wpi.first.wpilibj.ADIS16470_IMU;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SPI.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
 import frc.utils.SwerveUtils;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class DriveSubsystem extends SubsystemBase {
   // Create MAXSwerveModules
@@ -47,6 +51,18 @@ public class DriveSubsystem extends SubsystemBase {
   // The gyro sensor
   private final AHRS navX = new AHRS(Port.kMXP);
 
+  // Swerve drive kinematics object
+  // Locations for the swerve drive modules relative to the robot center.
+  Translation2d m_frontLeftLocation = new Translation2d(0.4086, 0.4086);
+  Translation2d m_frontRightLocation = new Translation2d(0.4086, -0.4086);
+  Translation2d m_backLeftLocation = new Translation2d(-0.4086, 0.4086);
+  Translation2d m_backRightLocation = new Translation2d(-0.4086, -0.4086);
+
+  // Creating my kinematics object using the module locations
+  SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
+    m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation
+  );
+
   // Slew rate filter variables for controlling lateral acceleration
   private double m_currentRotation = 0.0;
   private double m_currentTranslationDir = 0.0;
@@ -69,13 +85,37 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
+    AutoBuilder.configureHolonomic(
+      this::getPose, // Robot pose supplier
+      this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
+      this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+      this::driveRobotRelative, // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+      new HolonomicPathFollowerConfig( // HolonomicPathFollowerConfig, this should likely live in your Constants class
+              new PIDConstants(Constants.ModuleConstants.kDrivingP, Constants.ModuleConstants.kDrivingI, Constants.ModuleConstants.kDrivingD), // Translation PID constants
+              new PIDConstants(Constants.ModuleConstants.kTurningP, Constants.ModuleConstants.kTurningI, Constants.ModuleConstants.kTurningD), // Rotation PID constants
+              Constants.DriveConstants.kMaxSpeedMetersPerSecond, // Max module speed, in m/s
+              Constants.DriveConstants.kWheelBase, // Drive base radius in meters. Distance from robot center to furthest module.
+              new ReplanningConfig() // Default path replanning config. See the API for the options here
+      ),
+      () -> {
+          // Boolean supplier that controls when the path will be mirrored for the red alliance
+          // This will flip the path being followed to the red side of the field.
+          // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+
+          var alliance = DriverStation.getAlliance();
+          if (alliance != DriverStation.Alliance.Invalid) {
+              return alliance == DriverStation.Alliance.Red;
+          }
+          return false;
+      },
+      this // Reference to this subsystem to set requirements
+    );
   }
 
   @Override
   public void periodic() {
     // Update the odometry in the periodic block 
     SmartDashboard.putNumber("Gyro", Rotation2d.fromDegrees(-navX.getAngle()).getDegrees());
-
     m_odometry.update(
         Rotation2d.fromDegrees(-navX.getAngle()),
         new SwerveModulePosition[] {
@@ -94,6 +134,19 @@ public class DriveSubsystem extends SubsystemBase {
   public Pose2d getPose() {
     return m_odometry.getPoseMeters();
   }
+
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    return m_kinematics.toChassisSpeeds(m_frontLeft.getState(), m_frontRight.getState(), m_rearLeft.getState(), m_rearRight.getState());
+  }
+
+  public void driveRobotRelative(ChassisSpeeds speeds) {
+    var swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, DriveConstants.kMaxSpeedMetersPerSecond);
+    m_frontLeft.setDesiredState(swerveModuleStates[0]);
+    m_frontRight.setDesiredState(swerveModuleStates[1]);
+    m_rearLeft.setDesiredState(swerveModuleStates[2]);
+    m_rearRight.setDesiredState(swerveModuleStates[3]);
+  } 
 
   /**
    * Resets the odometry to the specified pose.
